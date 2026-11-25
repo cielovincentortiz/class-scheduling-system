@@ -1,0 +1,9 @@
+#:schema https://supabase.com/schemas/config/v1.json
+
+# Local identifier for the Class Scheduling System Supabase project.
+# The actual hosted project is selected when running `supabase link`.
+project_id = "class-scheduling-system"
+
+# Require a valid Supabase user JWT before the account-management function runs.
+[functions.manage-account]
+verify_jwt = true
