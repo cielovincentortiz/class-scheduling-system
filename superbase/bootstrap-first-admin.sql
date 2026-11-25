@@ -16,11 +16,11 @@ insert into public.profiles (
 select
   auth_user.id,
   lower(auth_user.email),
-  'REPLACE WITH ADMIN DISPLAY NAME',
+  'Cielo Vincent Ortiz',
   'admin',
   true
 from auth.users as auth_user
-where lower(auth_user.email) = lower('REPLACE WITH ADMIN EMAIL')
+where lower(auth_user.email) = lower('c.ortiz60490@mcc.edu.ph')
 on conflict (user_id) do update
 set
   email = excluded.email,
