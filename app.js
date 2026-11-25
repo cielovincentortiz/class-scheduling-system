@@ -549,6 +549,13 @@
     });
     $('#profileAccount').addEventListener('click', () => { closeProfileMenu(); openAccountDetails(); });
     $('#mainNav').addEventListener('click', handleNavClick);
+    document.addEventListener('click', event => {
+      const moreWrap = $('.nav-more-wrap');
+      if (moreWrap && !moreWrap.contains(event.target)) closeMoreMenu();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeMoreMenu();
+    });
     $('#viewRoot').addEventListener('click', handleViewClick);
     $('#viewRoot').addEventListener('change', handleViewChange);
     $('#viewRoot').addEventListener('input', handleViewInput);
@@ -630,7 +637,25 @@
     $('#profileButton').setAttribute('aria-expanded', 'false');
   }
 
+  function closeMoreMenu() {
+    const menu = $('#navMoreMenu');
+    const toggle = $('[data-nav-more-toggle]');
+    if (!menu || !toggle) return;
+    menu.classList.add('hidden');
+    toggle.setAttribute('aria-expanded', 'false');
+  }
+
   function handleNavClick(event) {
+    const moreToggle = event.target.closest('[data-nav-more-toggle]');
+    if (moreToggle) {
+      const menu = $('#navMoreMenu');
+      const opening = menu?.classList.contains('hidden');
+      if (!menu) return;
+      menu.classList.toggle('hidden', !opening);
+      moreToggle.setAttribute('aria-expanded', String(Boolean(opening)));
+      return;
+    }
+
     const button = event.target.closest('[data-page]');
     if (!button) return;
     currentPage = button.dataset.page;
@@ -662,7 +687,23 @@
     const items = NAV_ITEMS[currentUser.role] || NAV_ITEMS.student;
     const recordPages = ['teachers','programs','sections','subjects','rooms','students'];
     const activePage = recordPages.includes(currentPage) ? 'records' : currentPage;
-    $('#mainNav').innerHTML = items.map(([page, label, icon]) => `<button class="nav-link ${activePage === page ? 'active' : ''}" type="button" data-page="${page}"><span aria-hidden="true">${icon}</span> ${label}</button>`).join('');
+    // Keep the most frequently used destinations visible. Less-used administrator pages live in More.
+    const primaryCount = currentUser.role === 'admin' ? 5 : items.length;
+    const primaryItems = items.slice(0, primaryCount);
+    const secondaryItems = items.slice(primaryCount);
+    const renderItem = ([page, label, icon], menuItem = false) => `<button class="${menuItem ? 'nav-more-item' : 'nav-link'} ${activePage === page ? 'active' : ''}" type="button" data-page="${page}" ${activePage === page ? 'aria-current="page"' : ''}><span class="nav-item-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`;
+    const primaryMarkup = primaryItems.map(item => renderItem(item)).join('');
+    const moreIsActive = secondaryItems.some(([page]) => activePage === page);
+    const moreMarkup = secondaryItems.length ? `
+      <div class="nav-more-wrap">
+        <button class="nav-link nav-more-toggle ${moreIsActive ? 'active' : ''}" type="button" data-nav-more-toggle aria-expanded="false" aria-controls="navMoreMenu">
+          <span>More</span><span class="nav-more-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div id="navMoreMenu" class="nav-more-menu hidden" aria-label="More pages">
+          ${secondaryItems.map(item => renderItem(item, true)).join('')}
+        </div>
+      </div>` : '';
+    $('#mainNav').innerHTML = primaryMarkup + moreMarkup;
   }
 
   function renderCurrentPage() {
