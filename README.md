@@ -9,7 +9,7 @@ This guide explains how to use the portal as an administrator, teacher, or stude
 1. Open the Class Schedule Viewer website using the link provided by your school.
 2. Enter your school email address and password.
 3. Select **Sign in**.
-4. Your dashboard and available navigation options depend on your account role.
+4. Your dashboard and available navigation options depend on your account role. The portal header uses two rows: your account and text-size controls are at the top, while page navigation is directly below. On the administrator account, select **More** to open the additional pages, including **Consultation**, **Reports**, **User Accounts**, and **Settings**. The More menu does not require horizontal scrolling. Select a page to open it; press **Escape** or click elsewhere to close the menu.
 
 Accounts are issued by the school. Contact your school administrator if you do not have an account, cannot sign in, or need your password changed.
 
