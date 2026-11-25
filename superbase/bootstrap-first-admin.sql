@@ -37,4 +37,4 @@ select
   p.role,
   p.active
 from public.profiles as p
-where lower(p.email) = lower('REPLACE WITH ADMIN EMAIL');
+where lower(p.email) = lower('c.ortiz60490@mcc.edu.ph');
