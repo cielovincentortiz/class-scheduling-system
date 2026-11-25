@@ -6,35 +6,34 @@
 -- Replace the two placeholders before running this query.
 -- The email must exactly match the Auth user's email address.
 
-insert into public.profiles (
-  user_id,
-  email,
-  display_name,
-  role,
-  active
+INSERT INTO public.profiles (
+    user_id,
+    email,
+    display_name,
+    role,
+    active
 )
-select
-  auth_user.id,
-  lower(auth_user.email),
-  'Cielo Vincent Ortiz',
-  'admin',
-  true
-from auth.users as auth_user
-where lower(auth_user.email) = lower('c.ortiz60490@mcc.edu.ph')
-on conflict (user_id) do update
-set
-  email = excluded.email,
-  display_name = excluded.display_name,
-  role = 'admin',
-  active = true,
-  updated_at = now();
+SELECT
+    auth_user.id,
+    lower(auth_user.email),
+    $admin_name$Cielo Vincent Ortiz$admin_name$,
+    'admin',
+    true
+FROM auth.users AS auth_user
+WHERE lower(auth_user.email) =
+      lower($admin_email$c.ortiz60490@mcc.edu.ph$admin_email$)
 
--- Verify that the first administrator profile exists.
-select
-  p.user_id,
-  p.email,
-  p.display_name,
-  p.role,
-  p.active
-from public.profiles as p
-where lower(p.email) = lower('c.ortiz60490@mcc.edu.ph');
+ON CONFLICT (user_id) DO UPDATE
+SET
+    email = EXCLUDED.email,
+    display_name = EXCLUDED.display_name,
+    role = 'admin',
+    active = true,
+    updated_at = now()
+
+RETURNING
+    user_id,
+    email,
+    display_name,
+    role,
+    active;
