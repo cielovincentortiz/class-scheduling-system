@@ -846,6 +846,16 @@ th { color: #6d6161; background: #f6f2f1; }
 
 
 /* Cloud setup and account provisioning guidance */
+.account-registration-note {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid #8b1728;
+  border-radius: 0 7px 7px 0;
+  color: #5f5052;
+  background: #f7eeee;
+  font-size: calc((12px) * var(--font-scale, 1));
+  line-height: 1.55;
+}
 .cloud-status-message {
   display: block;
   min-height: 18px;
