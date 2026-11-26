@@ -8,17 +8,10 @@
 
   const STORAGE_KEY = 'classSchedulerData_v2';
   const FONT_SCALE_STORAGE_KEY = 'classSchedulerFontScale_v1';
-  const THEME_STORAGE_KEY = 'classSchedulerTheme_v1';
   const FONT_SCALE_MIN = 0.9;
   const FONT_SCALE_MAX = 1.4;
   const FONT_SCALE_STEP = 0.1;
   let currentFontScale = 1;
-  let currentTheme = 'light';
-  let navCloseTimer = null;
-  let navOpenTimer = null;
-  let navLayoutFrame = 0;
-  let navResizeObserver = null;
-  let currentNavItems = [];
 
   // Public browser configuration is kept separately in supabase-config.js.
   // Only the Project URL and publishable key belong there. Never add a secret/service-role key.
@@ -65,34 +58,6 @@
   const nowISO = () => new Date().toISOString();
 
 
-  function applyTheme(theme, persist = true) {
-    currentTheme = theme === 'dark' ? 'dark' : 'light';
-    const isDark = currentTheme === 'dark';
-    document.body.classList.toggle('dark', isDark);
-    document.documentElement.dataset.theme = currentTheme;
-    document.documentElement.style.colorScheme = currentTheme;
-
-    document.querySelectorAll('[data-theme-toggle]').forEach(button => {
-      const icon = button.querySelector('.theme-icon');
-      const label = button.querySelector('.theme-label');
-      const nextLabel = isDark ? 'Light' : 'Dark';
-      if (icon) icon.textContent = isDark ? '☀' : '☾';
-      if (label) label.textContent = nextLabel;
-      button.setAttribute('aria-label', `Switch to ${nextLabel.toLowerCase()} mode`);
-      button.setAttribute('title', `Switch to ${nextLabel.toLowerCase()} mode`);
-      button.setAttribute('aria-pressed', String(isDark));
-    });
-
-    const themeColor = document.querySelector('meta[name="theme-color"]');
-    if (themeColor) themeColor.setAttribute('content', isDark ? '#21191b' : '#6f0918');
-    if (persist) safeLocalSet(THEME_STORAGE_KEY, currentTheme);
-  }
-
-  function initializeTheme() {
-    const savedTheme = safeLocalGet(THEME_STORAGE_KEY);
-    applyTheme(savedTheme === 'dark' ? 'dark' : 'light', false);
-  }
-
   function applyFontScale(scale, persist = true) {
     const bounded = Math.min(FONT_SCALE_MAX, Math.max(FONT_SCALE_MIN, Number(scale) || 1));
     currentFontScale = Math.round(bounded * 100) / 100;
@@ -111,7 +76,6 @@
       button.disabled = currentFontScale === 1;
     });
     if (persist) safeLocalSet(FONT_SCALE_STORAGE_KEY, String(currentFontScale));
-    scheduleNavigationLayout();
   }
 
   function initializeFontControls() {
@@ -549,9 +513,7 @@
   }
 
   async function init() {
-    initializeTheme();
     initializeFontControls();
-    initializeNavigationSizing();
     initializeCloudConnection();
     $('#footerYear').textContent = String(new Date().getFullYear());
     $('#loginForm').addEventListener('submit', handleLogin);
@@ -586,37 +548,13 @@
       if (opening) openProfileMenu(); else closeProfileMenu();
     });
     $('#profileAccount').addEventListener('click', () => { closeProfileMenu(); openAccountDetails(); });
-    const mainNav = $('#mainNav');
-    mainNav.addEventListener('click', handleNavClick);
-    mainNav.addEventListener('pointerover', event => {
-      const wrap = event.target.closest('.nav-more-wrap');
-      const toggle = event.target.closest('[data-nav-more-toggle]');
-      const supportsHover = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
-      if (!wrap || !toggle || wrap.hidden || !supportsHover || (event.relatedTarget && wrap.contains(event.relatedTarget))) return;
-      // A short hover delay prevents the menu opening accidentally when layout reflows under a stationary pointer.
-      scheduleOpenMoreMenu(140);
-    });
-    mainNav.addEventListener('pointerout', event => {
-      const wrap = event.target.closest('.nav-more-wrap');
-      const supportsHover = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
-      if (!wrap || !supportsHover || (event.relatedTarget && wrap.contains(event.relatedTarget))) return;
-      window.clearTimeout(navOpenTimer);
-      scheduleCloseMoreMenu(180);
-    });
-    mainNav.addEventListener('focusout', event => {
-      const wrap = event.target.closest('.nav-more-wrap');
-      if (wrap && !wrap.contains(event.relatedTarget)) scheduleCloseMoreMenu(0);
-    });
+    $('#mainNav').addEventListener('click', handleNavClick);
     document.addEventListener('click', event => {
       const moreWrap = $('.nav-more-wrap');
       if (moreWrap && !moreWrap.contains(event.target)) closeMoreMenu();
     });
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') {
-        const wasOpen = $('#navMoreMenu') && !$('#navMoreMenu').hidden;
-        closeMoreMenu();
-        if (wasOpen) $('[data-nav-more-toggle]')?.focus();
-      }
+      if (event.key === 'Escape') closeMoreMenu();
     });
     $('#viewRoot').addEventListener('click', handleViewClick);
     $('#viewRoot').addEventListener('change', handleViewChange);
@@ -629,12 +567,6 @@
     $('#csvImportInput').addEventListener('change', importCSVFile);
     document.addEventListener('click', event => {
       if (!event.target.closest('.profile-wrap')) closeProfileMenu();
-      const themeToggle = event.target.closest('[data-theme-toggle]');
-      if (themeToggle) {
-        applyTheme(document.body.classList.contains('dark') ? 'light' : 'dark');
-        scheduleNavigationLayout();
-        return;
-      }
       const fontAction = event.target.closest('[data-font-action]');
       if (fontAction) {
         handleFontAdjustment(fontAction.dataset.fontAction);
@@ -705,184 +637,73 @@
     $('#profileButton').setAttribute('aria-expanded', 'false');
   }
 
-  function setMoreMenuOpen(open) {
-    const menu = $('#navMoreMenu');
-    const toggle = $('[data-nav-more-toggle]');
-    const wrap = $('.nav-more-wrap');
-    if (!menu || !toggle || !wrap || wrap.hidden) return;
-    window.clearTimeout(navCloseTimer);
-    window.clearTimeout(navOpenTimer);
-    menu.hidden = !open;
-    toggle.setAttribute('aria-expanded', String(Boolean(open)));
-    wrap.classList.toggle('is-open', Boolean(open));
-  }
-
   function closeMoreMenu() {
-    window.clearTimeout(navCloseTimer);
-    window.clearTimeout(navOpenTimer);
     const menu = $('#navMoreMenu');
     const toggle = $('[data-nav-more-toggle]');
-    const wrap = $('.nav-more-wrap');
-    if (!menu || !toggle || !wrap) return;
-    menu.hidden = true;
+    if (!menu || !toggle) return;
+    menu.classList.add('hidden');
     toggle.setAttribute('aria-expanded', 'false');
-    wrap.classList.remove('is-open');
-  }
-
-  function scheduleCloseMoreMenu(delay = 180) {
-    window.clearTimeout(navCloseTimer);
-    navCloseTimer = window.setTimeout(() => {
-      const wrap = $('.nav-more-wrap');
-      const menu = $('#navMoreMenu');
-      const focusInside = Boolean(wrap && wrap.contains(document.activeElement));
-      const pointerInside = Boolean(wrap && wrap.matches(':hover'));
-      if (wrap && menu && !focusInside && !pointerInside) closeMoreMenu();
-    }, delay);
-  }
-
-  function scheduleOpenMoreMenu(delay = 140) {
-    window.clearTimeout(navOpenTimer);
-    window.clearTimeout(navCloseTimer);
-    navOpenTimer = window.setTimeout(() => {
-      const wrap = $('.nav-more-wrap');
-      if (wrap && !wrap.hidden && wrap.matches(':hover')) setMoreMenuOpen(true);
-    }, delay);
   }
 
   function handleNavClick(event) {
     const moreToggle = event.target.closest('[data-nav-more-toggle]');
     if (moreToggle) {
       const menu = $('#navMoreMenu');
+      const opening = menu?.classList.contains('hidden');
       if (!menu) return;
-      const supportsHover = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
-      // A mouse click happens after pointerenter has already opened the menu; keep it open.
-      // Keyboard and touch users can still toggle it with the button.
-      if (supportsHover && event.detail > 0) setMoreMenuOpen(true);
-      else setMoreMenuOpen(menu.hidden);
+      menu.classList.toggle('hidden', !opening);
+      moreToggle.setAttribute('aria-expanded', String(Boolean(opening)));
       return;
     }
 
     const button = event.target.closest('[data-page]');
     if (!button) return;
-    closeMoreMenu();
     currentPage = button.dataset.page;
     generatorResult = null;
     renderApp();
   }
 
-  // Re-render the signed-in workspace after login, navigation, or data changes.
-  // This function must remain in the application: signInAs() calls it immediately
-  // after a successful Supabase login.
   function renderApp() {
     if (!currentUser) return;
     renderNavigation();
-    const profileName = $('#profileName');
-    const profileRole = $('#profileRole');
-    const profileAvatar = $('#profileAvatar');
-    const academicPeriod = $('#workspaceAcademicPeriod');
-    if (profileName) profileName.textContent = currentUser.displayName || currentUser.username || currentUser.email || 'Portal user';
-    if (profileRole) profileRole.textContent = roleLabel(currentUser.role);
-    if (profileAvatar) profileAvatar.textContent = (currentUser.displayName || currentUser.username || currentUser.email || 'U').slice(0, 1).toUpperCase();
+    $('#profileName').textContent = currentUser.displayName || currentUser.username;
+    $('#profileRole').textContent = roleLabel(currentUser.role);
+    $('#profileAvatar').textContent = (currentUser.displayName || currentUser.username).slice(0, 1).toUpperCase();
     renderCurrentPage();
-    if (academicPeriod) academicPeriod.textContent = `${state.settings.academicYear} · ${state.settings.semester}`;
-    scheduleNavigationLayout();
+    $('#workspaceAcademicPeriod').textContent = `${state.settings.academicYear} · ${state.settings.semester}`;
   }
 
-  function roleLabel(role) {
-    return role === 'admin' ? 'Administrator' : role === 'teacher' ? 'Teacher' : 'Student';
-  }
+  function roleLabel(role) { return role === 'admin' ? 'Administrator' : role === 'teacher' ? 'Teacher' : 'Student'; }
 
-  function renderNavItem([page, label, icon], menuItem = false, activePage = currentPage) {
-    const recordPages = ['teachers','programs','sections','subjects','rooms','students'];
-    const normalizedActive = recordPages.includes(activePage) ? 'records' : activePage;
-    return `<button class="${menuItem ? 'nav-more-item' : 'nav-link'} ${normalizedActive === page ? 'active' : ''}" type="button" data-page="${page}" ${normalizedActive === page ? 'aria-current="page"' : ''}><span class="nav-item-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`;
-  }
+  const NAV_ITEMS = {
+    admin: [
+      ['dashboard', 'Overview', '⌂'], ['records', 'Records', '▤'], ['schedules', 'Class Schedule', '▦'], ['generator', 'Schedule Generator', '✳'], ['community', 'Community', '◉'], ['consultation-admin', 'Consultation', '◷'], ['reports', 'Reports', '▥'], ['accounts', 'User Accounts', '◎'], ['settings', 'Settings', '⚙']
+    ],
+    teacher: [['my-schedule', 'My Schedule', '▦'], ['my-load', 'Teaching Load', '◷'], ['consultation', 'Consultation', '☏'], ['community', 'Community', '◉']],
+    student: [['my-schedule', 'My Schedule', '▦'], ['my-subjects', 'My Subjects', '◈'], ['community', 'Community', '◉']]
+  };
 
   function renderNavigation() {
-    currentNavItems = NAV_ITEMS[currentUser.role] || NAV_ITEMS.student;
-    const nav = $('#mainNav');
-    if (!nav) return;
-    const measureItems = currentNavItems.map(item => renderNavItem(item).replace('data-page=', 'data-nav-measure-item data-page=')).join('');
-    nav.innerHTML = `
-      <div class="nav-measure" aria-hidden="true" inert>
-        ${measureItems}
-        <button class="nav-link nav-more-toggle" type="button" data-nav-measure-more tabindex="-1"><span>More</span></button>
-      </div>
-      <div class="nav-visible-items" data-nav-visible-items></div>
-      <div class="nav-more-wrap" data-nav-more-wrap hidden>
-        <button class="nav-link nav-more-toggle" type="button" data-nav-more-toggle aria-expanded="false" aria-controls="navMoreMenu"><span>More</span></button>
-        <div id="navMoreMenu" class="nav-more-menu" aria-label="Additional navigation pages" hidden></div>
-      </div>`;
-    scheduleNavigationLayout();
-  }
-
-  function updateNavigationOverflow() {
-    const nav = $('#mainNav');
-    const visible = $('[data-nav-visible-items]', nav || document);
-    const moreWrap = $('[data-nav-more-wrap]', nav || document);
-    const menu = $('#navMoreMenu');
-    const measure = $('.nav-measure', nav || document);
-    if (!nav || !visible || !moreWrap || !menu || !measure || !currentNavItems.length) return;
-    if (!nav.isConnected || nav.clientWidth < 1 || nav.getClientRects().length === 0) return;
-
-    const itemWidths = [...measure.querySelectorAll('[data-nav-measure-item]')]
-      .map(button => button.getBoundingClientRect().width);
-    const moreWidth = $('[data-nav-measure-more]', measure)?.getBoundingClientRect().width || 78;
-    const gap = parseFloat(getComputedStyle(nav).columnGap) || 5;
-    const available = nav.clientWidth;
-    const totalItemsWidth = itemWidths.reduce((sum, width) => sum + width, 0) + Math.max(0, itemWidths.length - 1) * gap;
-
-    let visibleCount = currentNavItems.length;
-    if (totalItemsWidth > available + 1) {
-      visibleCount = 0;
-      let prefixWidth = 0;
-      // Find the largest leading set that fits beside the More button.
-      for (let count = 0; count < currentNavItems.length; count++) {
-        if (count > 0) prefixWidth += gap;
-        prefixWidth += itemWidths[count] || 0;
-        const neededWidth = prefixWidth + gap + moreWidth;
-        if (neededWidth <= available + 1) visibleCount = count;
-        else break;
-      }
-    }
-
-    const visibleItems = currentNavItems.slice(0, visibleCount);
-    const overflowItems = currentNavItems.slice(visibleCount);
-    const activePage = ['teachers','programs','sections','subjects','rooms','students'].includes(currentPage) ? 'records' : currentPage;
-    const moreIsActive = overflowItems.some(([page]) => page === activePage);
-
-    visible.innerHTML = visibleItems.map(item => renderNavItem(item, false, currentPage)).join('');
-    menu.innerHTML = overflowItems.map(item => renderNavItem(item, true, currentPage)).join('');
-    moreWrap.hidden = overflowItems.length === 0;
-    const toggle = $('[data-nav-more-toggle]', moreWrap);
-    if (toggle) {
-      toggle.classList.toggle('active', moreIsActive);
-      if (moreIsActive) toggle.setAttribute('aria-current', 'page');
-      else toggle.removeAttribute('aria-current');
-    }
-    if (!overflowItems.length) closeMoreMenu();
-    nav.dataset.overflowing = overflowItems.length ? 'true' : 'false';
-  }
-
-  function scheduleNavigationLayout() {
-    if (navLayoutFrame) cancelAnimationFrame(navLayoutFrame);
-    navLayoutFrame = requestAnimationFrame(() => {
-      navLayoutFrame = 0;
-      updateNavigationOverflow();
-    });
-  }
-
-  function initializeNavigationSizing() {
-    const nav = $('#mainNav');
-    if (!nav) return;
-    if ('ResizeObserver' in window) {
-      navResizeObserver = new ResizeObserver(scheduleNavigationLayout);
-      navResizeObserver.observe(nav);
-      const actions = $('.topbar-actions');
-      if (actions) navResizeObserver.observe(actions);
-    }
-    window.addEventListener('resize', scheduleNavigationLayout, { passive: true });
-    window.addEventListener('orientationchange', scheduleNavigationLayout, { passive: true });
+    const items = NAV_ITEMS[currentUser.role] || NAV_ITEMS.student;
+    const recordPages = ['teachers','programs','sections','subjects','rooms','students'];
+    const activePage = recordPages.includes(currentPage) ? 'records' : currentPage;
+    // Keep the most frequently used destinations visible. Less-used administrator pages live in More.
+    const primaryCount = currentUser.role === 'admin' ? 5 : items.length;
+    const primaryItems = items.slice(0, primaryCount);
+    const secondaryItems = items.slice(primaryCount);
+    const renderItem = ([page, label, icon], menuItem = false) => `<button class="${menuItem ? 'nav-more-item' : 'nav-link'} ${activePage === page ? 'active' : ''}" type="button" data-page="${page}" ${activePage === page ? 'aria-current="page"' : ''}><span class="nav-item-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`;
+    const primaryMarkup = primaryItems.map(item => renderItem(item)).join('');
+    const moreIsActive = secondaryItems.some(([page]) => activePage === page);
+    const moreMarkup = secondaryItems.length ? `
+      <div class="nav-more-wrap">
+        <button class="nav-link nav-more-toggle ${moreIsActive ? 'active' : ''}" type="button" data-nav-more-toggle aria-expanded="false" aria-controls="navMoreMenu">
+          <span>More</span><span class="nav-more-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div id="navMoreMenu" class="nav-more-menu hidden" aria-label="More pages">
+          ${secondaryItems.map(item => renderItem(item, true)).join('')}
+        </div>
+      </div>` : '';
+    $('#mainNav').innerHTML = primaryMarkup + moreMarkup;
   }
 
   function renderCurrentPage() {
@@ -2663,18 +2484,6 @@
     }
   }
 
-  // Expose the core render functions for compatibility with any page-level
-  // callbacks and to make the active build easy to verify during deployment.
-  // Internal application code continues to use the lexical function references.
-  window.renderApp = renderApp;
-  window.roleLabel = roleLabel;
-  window.CLASS_SCHEDULER_BUILD = '4.1.2';
-
   // Start the application after all page and interaction functions are defined.
-  // Catch startup failures so they are visible in the console instead of leaving
-  // the workspace blank without a useful diagnostic.
-  init().catch(error => {
-    console.error('Class Scheduler initialization failed:', error);
-    showToast(error?.message || 'The portal could not finish loading. Please refresh the page.', 'error');
-  });
+  init();
 })();
