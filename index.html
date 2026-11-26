@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#6f0918">
+  <meta name="description" content="A class scheduling portal for managing academic records, teaching assignments, and timetables.">
+  <title>Class Schedule Viewer | Academic Scheduling Portal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=4.2.0">
+  <link rel="stylesheet" href="style.css?v=4.2.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="app.js?v=4.2.0" defer></script>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <main id="loginScreen" class="public-site">
+      <header class="public-nav">
+        <a class="public-brand" href="#home" aria-label="Class Schedule Viewer home">
+          <span class="public-brand-mark">CS</span>
+          <span>Class Schedule Viewer</span>
+        </a>
+        <nav class="public-links" aria-label="Public navigation">
+          <a class="active" href="#home">Home</a>
+          <a href="#schedule-info">Class Schedule</a>
+          <a href="#how-to-use">Help</a>
+        </nav>
+        <div class="font-adjuster font-adjuster-public" role="group" aria-label="Text size controls">
+          <button type="button" data-font-action="decrease" aria-label="Decrease text size" title="Decrease text size">A−</button>
+          <output data-font-scale-label aria-live="polite">100%</output>
+          <button type="button" data-font-action="increase" aria-label="Increase text size" title="Increase text size">A+</button>
+          <button type="button" class="font-reset" data-font-action="reset" aria-label="Reset text size" title="Reset text size">Reset</button>
+        </div>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">☾ Dark</button>
+        <button id="showLoginButton" class="public-login-button" type="button">Portal Login <span aria-hidden="true">→</span></button>
+      </header>
+
+      <section id="home" class="public-banner">
+        <div class="banner-texture" aria-hidden="true"></div>
+        <div class="public-banner-content">
+          <p class="banner-kicker">ACADEMIC SCHEDULING PORTAL</p>
+          <h1>Class Schedule<br><span>Viewer</span></h1>
+          <p class="banner-description">A clear, organized place to manage teachers, sections, classrooms, and weekly class schedules.</p>
+          <div class="banner-actions">
+            <button id="showLoginButtonHero" class="banner-cta" type="button">Open scheduling portal <span aria-hidden="true">→</span></button>
+            <span class="banner-meta">Monday–Saturday <i></i> 7:00 AM–9:00 PM</span>
+          </div>
+        </div>
+        <div class="banner-side" aria-hidden="true">
+          <div class="banner-emblem"><span>CS</span><small>CLASS<br>SCHEDULE</small></div>
+          <div class="banner-side-caption">PLAN · ORGANIZE · CONNECT</div>
+        </div>
+        <div class="banner-bottom-line"><span>CLASS SCHEDULING SYSTEM</span><span>ACADEMIC YEAR &nbsp;·&nbsp; SEMESTER BASED</span></div>
+      </section>
+
+      <section class="public-main">
+        <div class="public-information">
+          <div class="public-section-heading">
+            <p class="eyebrow">WELCOME</p>
+            <h2 id="schedule-info">Schedules made easier to follow.</h2>
+            <p>Choose your account type and sign in to view the information assigned to you. Administrators manage the master timetable; teachers and students see their own schedules.</p>
+          </div>
+          <div class="public-feature-list">
+            <article class="public-feature">
+              <span class="feature-symbol">▤</span>
+              <div><h3>Section schedules</h3><p>Check subjects, instructors, meeting times, and assigned venues.</p></div>
+            </article>
+            <article class="public-feature">
+              <span class="feature-symbol">♙</span>
+              <div><h3>Teacher schedules</h3><p>Review teaching assignments, available periods, and consultation hours.</p></div>
+            </article>
+            <article class="public-feature">
+              <span class="feature-symbol">⌂</span>
+              <div><h3>Room availability</h3><p>Organize lecture rooms, computer laboratories, the gym, and online classes.</p></div>
+            </article>
+            <article class="public-feature">
+              <span class="feature-symbol">◉</span>
+              <div><h3>School community</h3><p>Share schedule requests, ask questions, and follow class announcements.</p></div>
+            </article>
+          </div>
+          <div id="how-to-use" class="public-help-note">
+            <strong>How to use the portal</strong>
+            <span>Sign in with the account provided by your school administrator. Your dashboard will show the schedules and tools available for your role.</span>
+          </div>
+        </div>
+
+        <section class="login-panel-card" aria-labelledby="loginTitle">
+          <div class="login-card-heading">
+            <span class="login-card-icon">↪</span>
+            <div>
+              <p class="eyebrow">SECURE PORTAL ACCESS</p>
+              <h2 id="loginTitle">Sign in to continue</h2>
+            </div>
+          </div>
+          <p class="muted login-intro">Sign in using the school email and password issued by your administrator.</p>
+          <form id="loginForm" class="form-stack">
+            <label for="loginUsername">Email address</label>
+            <input id="loginUsername" name="username" autocomplete="username" required placeholder="Enter your school email address">
+            <label for="loginPassword">Password</label>
+            <div class="password-input-wrap login-password-wrap">
+              <input id="loginPassword" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password">
+              <button class="password-toggle" type="button" data-password-target="loginPassword" aria-label="Show password" aria-pressed="false">Show</button>
+            </div>
+            <button class="btn btn-primary btn-full" type="submit">Sign in <span aria-hidden="true">→</span></button>
+          </form>
+          <p class="account-registration-note">Accounts are created by the school administrator. Public self-registration is disabled.</p>
+          <div id="cloudStatusMessage" class="cloud-status-message" role="status" aria-live="polite"></div>
+        </section>
+      </section>
+      <footer class="public-footer">
+        <span>© 2026 Class Schedule Viewer. All rights reserved.</span>
+        <span>Academic Scheduling Portal</span>
+      </footer>
+    </main>
+
+    <div id="workspace" class="workspace hidden">
+      <header class="topbar">
+        <a class="brand" href="#dashboard" aria-label="Class Scheduler home">
+          <span class="brand-mark brand-mark-small">CS</span>
+          <span class="brand-name">class<span>scheduler</span></span>
+        </a>
+        <div class="topbar-actions">
+          <button class="theme-toggle theme-toggle-workspace" type="button" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false">☾ Dark</button>
+          <div class="font-adjuster font-adjuster-workspace" role="group" aria-label="Text size controls">
+            <button type="button" data-font-action="decrease" aria-label="Decrease text size" title="Decrease text size">A−</button>
+            <output data-font-scale-label aria-live="polite">100%</output>
+            <button type="button" data-font-action="increase" aria-label="Increase text size" title="Increase text size">A+</button>
+            <button type="button" class="font-reset" data-font-action="reset" aria-label="Reset text size" title="Reset text size">Reset</button>
+          </div>
+          <div class="profile-wrap">
+            <button id="profileButton" class="profile-button" type="button" aria-expanded="false" aria-haspopup="true">
+              <span id="profileAvatar" class="avatar">A</span>
+              <span class="profile-meta"><strong id="profileName">Administrator</strong><small id="profileRole">Administrator</small></span>
+            </button>
+            <div id="profileMenu" class="profile-menu hidden">
+              <button id="profileAccount" type="button">Account details</button>
+              <button id="logoutButton" type="button">Sign out</button>
+            </div>
+          </div>
+        </div>
+        <nav id="mainNav" class="main-nav" aria-label="Main navigation"></nav>
+      </header>
+      <div class="workspace-banner">
+        <div>
+          <p>ACADEMIC SCHEDULING PORTAL</p>
+          <h1>Organize every class in one place.</h1>
+        </div>
+        <div class="workspace-period"><span>ACTIVE ACADEMIC PERIOD</span><strong id="workspaceAcademicPeriod">2026–2027 · First Semester</strong></div>
+      </div>
+      <main id="mainContent" class="main-content" tabindex="-1">
+        <div id="viewRoot"></div>
+      </main>
+      <footer class="app-footer"><span>© <span id="footerYear">2026</span> Class Schedule Viewer. All rights reserved.</span><span>Academic Scheduling Portal</span></footer>
+    </div>
+  </div>
+
+  <div id="modalRoot" class="modal-root" aria-live="polite"></div>
+  <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <input id="jsonImportInput" class="visually-hidden" type="file" accept="application/json,.json">
+  <input id="csvImportInput" class="visually-hidden" type="file" accept="text/csv,.csv">
+</body>
+</html>

@@ -1,0 +1,14 @@
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.local
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
+# Tooling
+node_modules/
+.DS_Store
+Thumbs.db
