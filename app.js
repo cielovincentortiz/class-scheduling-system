@@ -770,6 +770,28 @@
     renderApp();
   }
 
+  // Re-render the signed-in workspace after login, navigation, or data changes.
+  // This function must remain in the application: signInAs() calls it immediately
+  // after a successful Supabase login.
+  function renderApp() {
+    if (!currentUser) return;
+    renderNavigation();
+    const profileName = $('#profileName');
+    const profileRole = $('#profileRole');
+    const profileAvatar = $('#profileAvatar');
+    const academicPeriod = $('#workspaceAcademicPeriod');
+    if (profileName) profileName.textContent = currentUser.displayName || currentUser.username || currentUser.email || 'Portal user';
+    if (profileRole) profileRole.textContent = roleLabel(currentUser.role);
+    if (profileAvatar) profileAvatar.textContent = (currentUser.displayName || currentUser.username || currentUser.email || 'U').slice(0, 1).toUpperCase();
+    renderCurrentPage();
+    if (academicPeriod) academicPeriod.textContent = `${state.settings.academicYear} · ${state.settings.semester}`;
+    scheduleNavigationLayout();
+  }
+
+  function roleLabel(role) {
+    return role === 'admin' ? 'Administrator' : role === 'teacher' ? 'Teacher' : 'Student';
+  }
+
   function renderNavItem([page, label, icon], menuItem = false, activePage = currentPage) {
     const recordPages = ['teachers','programs','sections','subjects','rooms','students'];
     const normalizedActive = recordPages.includes(activePage) ? 'records' : activePage;
