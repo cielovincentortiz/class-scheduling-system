@@ -9,7 +9,7 @@ This guide explains how to use the portal as an administrator, teacher, or stude
 1. Open the Class Schedule Viewer website using the link provided by your school.
 2. Enter your school email address and password.
 3. Select **Sign in**.
-4. Your dashboard and available navigation options depend on your account role. The portal header adapts to your screen. Navigation links remain on a single row. If all pages fit, they are shown directly; if space is limited, the remaining pages appear under **More**. On a computer, point to **More** to open it. On a phone or tablet, tap **More**. Select a page to open it; press **Escape** or click elsewhere to close the menu.
+4. Your dashboard and available navigation options depend on your account role. The portal header uses two rows: your account and text-size controls are at the top, while page navigation is directly below. On the administrator account, select **More** to open the additional pages, including **Consultation**, **Reports**, **User Accounts**, and **Settings**. The More menu does not require horizontal scrolling. Select a page to open it; press **Escape** or click elsewhere to close the menu.
 
 Accounts are issued by the school. Contact your school administrator if you do not have an account, cannot sign in, or need your password changed.
 
@@ -22,7 +22,7 @@ The portal includes text-size controls in the top navigation area.
 - The percentage between the buttons shows the current size.
 - **Reset** returns text to the standard size.
 
-Text size can be adjusted from 90% to 140%. Your preference is remembered by the same browser on the same device. Changing the setting does not change the timetable or other school records. Use the **Dark / Light** control to switch the portal's appearance. The selected appearance is also remembered on that browser and device.
+Text size can be adjusted from 90% to 140%. Your preference is remembered by the same browser on the same device. Changing the setting does not change the timetable or other school records.
 
 ## Your account menu
 
