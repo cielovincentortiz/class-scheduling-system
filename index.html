@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#6f0918">
   <meta name="description" content="A class scheduling portal for managing academic records, teaching assignments, and timetables.">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="apple-touch-icon" href="favicon.svg">
   <title>Class Schedule Viewer | Academic Scheduling Portal</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="supabase-config.js" defer></script>
-  <script src="app.js?v=4.1.2" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -26,7 +24,6 @@
           <a href="#schedule-info">Class Schedule</a>
           <a href="#how-to-use">Help</a>
         </nav>
-        <button type="button" class="theme-toggle theme-toggle-public" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark</span></button>
         <div class="font-adjuster font-adjuster-public" role="group" aria-label="Text size controls">
           <button type="button" data-font-action="decrease" aria-label="Decrease text size" title="Decrease text size">A−</button>
           <output data-font-scale-label aria-live="polite">100%</output>
@@ -121,7 +118,6 @@
           <span class="brand-name">class<span>scheduler</span></span>
         </a>
         <div class="topbar-actions">
-          <button type="button" class="theme-toggle theme-toggle-workspace" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode"><span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark</span></button>
           <div class="font-adjuster font-adjuster-workspace" role="group" aria-label="Text size controls">
             <button type="button" data-font-action="decrease" aria-label="Decrease text size" title="Decrease text size">A−</button>
             <output data-font-scale-label aria-live="polite">100%</output>
