@@ -683,8 +683,14 @@
     student: [['my-schedule', 'My Schedule', '▦'], ['my-subjects', 'My Subjects', '◈'], ['community', 'Community', '◉']]
   };
 
+  // Compatibility aliases for older markup/scripts that use the lowercase name.
+  // JavaScript identifiers are case-sensitive: NAV_ITEMS and nav_items are different names.
+  const nav_items = NAV_ITEMS;
+  window.NAV_ITEMS = NAV_ITEMS;
+  window.nav_items = nav_items;
+
   function renderNavigation() {
-    const items = NAV_ITEMS[currentUser.role] || NAV_ITEMS.student;
+    const items = nav_items[currentUser.role] || nav_items.student;
     const recordPages = ['teachers','programs','sections','subjects','rooms','students'];
     const activePage = recordPages.includes(currentPage) ? 'records' : currentPage;
     // Keep the most frequently used destinations visible. Less-used administrator pages live in More.
