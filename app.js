@@ -8,6 +8,7 @@
 
   const STORAGE_KEY = 'classSchedulerData_v2';
   const FONT_SCALE_STORAGE_KEY = 'classSchedulerFontScale_v1';
+  const THEME_STORAGE_KEY = 'classSchedulerTheme_v1';
   const FONT_SCALE_MIN = 0.9;
   const FONT_SCALE_MAX = 1.4;
   const FONT_SCALE_STEP = 0.1;
@@ -76,6 +77,7 @@
       button.disabled = currentFontScale === 1;
     });
     if (persist) safeLocalSet(FONT_SCALE_STORAGE_KEY, String(currentFontScale));
+    if (currentUser) scheduleNavigationFit();
   }
 
   function initializeFontControls() {
@@ -87,6 +89,34 @@
     if (action === 'increase') applyFontScale(currentFontScale + FONT_SCALE_STEP);
     else if (action === 'decrease') applyFontScale(currentFontScale - FONT_SCALE_STEP);
     else if (action === 'reset') applyFontScale(1);
+  }
+
+  function applyTheme(theme, persist = true) {
+    const dark = theme === 'dark';
+    document.body.classList.toggle('dark', dark);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    document.querySelectorAll('[data-theme-toggle]').forEach(button => {
+      const icon = $('.theme-icon', button);
+      const label = $('.theme-label', button);
+      if (icon) icon.textContent = dark ? '☀' : '☾';
+      if (label) label.textContent = dark ? 'Light' : 'Dark';
+      button.setAttribute('aria-pressed', String(dark));
+      const message = dark ? 'Switch to light mode' : 'Switch to dark mode';
+      button.setAttribute('aria-label', message);
+      button.title = message;
+    });
+    if (persist) safeLocalSet(THEME_STORAGE_KEY, dark ? 'dark' : 'light');
+  }
+
+  function initializeThemeControls() {
+    applyTheme(safeLocalGet(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light', false);
+  }
+
+  function scheduleNavigationFit() {
+    if (!currentUser) return;
+    window.requestAnimationFrame(() => {
+      if (currentUser) renderNavigation();
+    });
   }
 
   function setCloudStatus(message, kind = 'info') {
@@ -514,6 +544,7 @@
 
   async function init() {
     initializeFontControls();
+    initializeThemeControls();
     initializeCloudConnection();
     $('#footerYear').textContent = String(new Date().getFullYear());
     $('#loginForm').addEventListener('submit', handleLogin);
@@ -549,6 +580,11 @@
     });
     $('#profileAccount').addEventListener('click', () => { closeProfileMenu(); openAccountDetails(); });
     $('#mainNav').addEventListener('click', handleNavClick);
+    window.addEventListener('resize', () => {
+      if (!currentUser) return;
+      window.clearTimeout(window.__classSchedulerNavResizeTimer);
+      window.__classSchedulerNavResizeTimer = window.setTimeout(scheduleNavigationFit, 70);
+    }, { passive: true });
     document.addEventListener('click', event => {
       const moreWrap = $('.nav-more-wrap');
       if (moreWrap && !moreWrap.contains(event.target)) closeMoreMenu();
@@ -567,6 +603,11 @@
     $('#csvImportInput').addEventListener('change', importCSVFile);
     document.addEventListener('click', event => {
       if (!event.target.closest('.profile-wrap')) closeProfileMenu();
+      const themeToggle = event.target.closest('[data-theme-toggle]');
+      if (themeToggle) {
+        applyTheme(document.body.classList.contains('dark') ? 'light' : 'dark');
+        return;
+      }
       const fontAction = event.target.closest('[data-font-action]');
       if (fontAction) {
         handleFontAdjustment(fontAction.dataset.fontAction);
@@ -638,21 +679,23 @@
   }
 
   function closeMoreMenu() {
-    const menu = $('#navMoreMenu');
+    const wrap = $('.nav-more-wrap');
     const toggle = $('[data-nav-more-toggle]');
-    if (!menu || !toggle) return;
-    menu.classList.add('hidden');
+    if (!wrap || !toggle) return;
+    wrap.classList.remove('is-open');
     toggle.setAttribute('aria-expanded', 'false');
   }
 
   function handleNavClick(event) {
     const moreToggle = event.target.closest('[data-nav-more-toggle]');
     if (moreToggle) {
-      const menu = $('#navMoreMenu');
-      const opening = menu?.classList.contains('hidden');
-      if (!menu) return;
-      menu.classList.toggle('hidden', !opening);
-      moreToggle.setAttribute('aria-expanded', String(Boolean(opening)));
+      // Pointer users receive an automatic hover menu. Click-to-toggle is reserved for touch devices.
+      const supportsHover = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
+      if (supportsHover) return;
+      const wrap = moreToggle.closest('.nav-more-wrap');
+      const opening = !wrap.classList.contains('is-open');
+      wrap.classList.toggle('is-open', opening);
+      moreToggle.setAttribute('aria-expanded', String(opening));
       return;
     }
 
@@ -684,26 +727,90 @@
   };
 
   function renderNavigation() {
+    const nav = $('#mainNav');
+    if (!nav || !currentUser) return;
     const items = NAV_ITEMS[currentUser.role] || NAV_ITEMS.student;
     const recordPages = ['teachers','programs','sections','subjects','rooms','students'];
     const activePage = recordPages.includes(currentPage) ? 'records' : currentPage;
-    // Keep the most frequently used destinations visible. Less-used administrator pages live in More.
-    const primaryCount = currentUser.role === 'admin' ? 5 : items.length;
-    const primaryItems = items.slice(0, primaryCount);
-    const secondaryItems = items.slice(primaryCount);
-    const renderItem = ([page, label, icon], menuItem = false) => `<button class="${menuItem ? 'nav-more-item' : 'nav-link'} ${activePage === page ? 'active' : ''}" type="button" data-page="${page}" ${activePage === page ? 'aria-current="page"' : ''}><span class="nav-item-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`;
-    const primaryMarkup = primaryItems.map(item => renderItem(item)).join('');
-    const moreIsActive = secondaryItems.some(([page]) => activePage === page);
-    const moreMarkup = secondaryItems.length ? `
+    const renderItem = ([page, label, icon], menuItem = false) => `<button class="${menuItem ? 'nav-more-item' : 'nav-link'} ${activePage === page ? 'active' : ''}" type="button" data-page="${page}" ${menuItem ? 'role="menuitem"' : ''} ${activePage === page ? 'aria-current="page"' : ''}><span class="nav-item-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`;
+
+    // Measure the full labels at the current font scale and viewport width.
+    // The More button is only created when every destination cannot fit on one row.
+    const measurer = document.createElement('div');
+    measurer.className = 'nav-measure';
+    const probeButtons = items.map(item => {
+      const holder = document.createElement('div');
+      holder.innerHTML = renderItem(item);
+      const button = holder.firstElementChild;
+      measurer.appendChild(button);
+      return button;
+    });
+    const moreProbeHolder = document.createElement('div');
+    moreProbeHolder.innerHTML = '<button class="nav-link nav-more-toggle" type="button"><span>More</span></button>';
+    const moreProbe = moreProbeHolder.firstElementChild;
+    measurer.appendChild(moreProbe);
+    nav.appendChild(measurer);
+
+    const navWidth = nav.clientWidth;
+    const gap = Number.parseFloat(getComputedStyle(nav).columnGap) || 5;
+    const widths = probeButtons.map(button => button.getBoundingClientRect().width);
+    const moreWidth = moreProbe.getBoundingClientRect().width;
+    measurer.remove();
+
+    let visibleCount = items.length;
+    const allWidth = widths.reduce((sum, width) => sum + width, 0) + Math.max(0, items.length - 1) * gap;
+    if (navWidth > 0 && allWidth > navWidth) {
+      visibleCount = 0;
+      let used = moreWidth;
+      for (let index = 0; index < items.length; index += 1) {
+        const next = widths[index] + (visibleCount ? gap : gap);
+        if (used + next <= navWidth) {
+          used += next;
+          visibleCount += 1;
+        } else break;
+      }
+    }
+
+    const visibleItems = items.slice(0, visibleCount);
+    const overflowItems = items.slice(visibleCount);
+    const moreIsActive = overflowItems.some(([page]) => activePage === page);
+    const moreMarkup = overflowItems.length ? `
       <div class="nav-more-wrap">
-        <button class="nav-link nav-more-toggle ${moreIsActive ? 'active' : ''}" type="button" data-nav-more-toggle aria-expanded="false" aria-controls="navMoreMenu">
-          <span>More</span><span class="nav-more-chevron" aria-hidden="true">⌄</span>
+        <button class="nav-link nav-more-toggle ${moreIsActive ? 'active' : ''}" type="button" data-nav-more-toggle aria-haspopup="true" aria-expanded="false" aria-controls="navMoreMenu">
+          <span>More</span>
         </button>
-        <div id="navMoreMenu" class="nav-more-menu hidden" aria-label="More pages">
-          ${secondaryItems.map(item => renderItem(item, true)).join('')}
+        <div id="navMoreMenu" class="nav-more-menu" role="menu" aria-label="Additional navigation">
+          ${overflowItems.map(item => renderItem(item, true)).join('')}
         </div>
       </div>` : '';
-    $('#mainNav').innerHTML = primaryMarkup + moreMarkup;
+    nav.innerHTML = `${visibleItems.map(item => renderItem(item)).join('')}${moreMarkup}`;
+
+    const wrap = $('.nav-more-wrap', nav);
+    if (wrap) {
+      const toggle = $('[data-nav-more-toggle]', wrap);
+      const openForPointer = event => {
+        if (event.pointerType === 'touch') return;
+        wrap.classList.add('is-open');
+        toggle.setAttribute('aria-expanded', 'true');
+      };
+      const closeForPointer = event => {
+        if (event.pointerType === 'touch') return;
+        wrap.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+      };
+      wrap.addEventListener('pointerover', openForPointer);
+      wrap.addEventListener('pointerout', event => {
+        if (event.pointerType === 'touch') return;
+        if (!wrap.contains(event.relatedTarget)) closeForPointer(event);
+      });
+      wrap.addEventListener('focusin', () => {
+        wrap.classList.add('is-open');
+        toggle.setAttribute('aria-expanded', 'true');
+      });
+      wrap.addEventListener('focusout', event => {
+        if (!wrap.contains(event.relatedTarget)) closeMoreMenu();
+      });
+    }
   }
 
   function renderCurrentPage() {
