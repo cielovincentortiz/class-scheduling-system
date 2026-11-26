@@ -2663,6 +2663,18 @@
     }
   }
 
+  // Expose the core render functions for compatibility with any page-level
+  // callbacks and to make the active build easy to verify during deployment.
+  // Internal application code continues to use the lexical function references.
+  window.renderApp = renderApp;
+  window.roleLabel = roleLabel;
+  window.CLASS_SCHEDULER_BUILD = '4.1.2';
+
   // Start the application after all page and interaction functions are defined.
-  init();
+  // Catch startup failures so they are visible in the console instead of leaving
+  // the workspace blank without a useful diagnostic.
+  init().catch(error => {
+    console.error('Class Scheduler initialization failed:', error);
+    showToast(error?.message || 'The portal could not finish loading. Please refresh the page.', 'error');
+  });
 })();
