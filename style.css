@@ -1467,3 +1467,62 @@ body.dark .cloud-status-message { color: #d5c9cb !important; }
 @media (max-width: 430px) {
   .public-nav .theme-toggle { min-height: 31px; padding: 5px 8px; font-size: calc(10px * var(--font-scale, 1)); }
 }
+
+
+/* Targeted dark-mode readability and consistent utility-control ordering. */
+body.dark .account-registration-note {
+  color: #f2e7e9 !important;
+  background: #35272b !important;
+  border-left-color: #e36b7a !important;
+}
+body.dark .public-help-note {
+  color: #e8dfe1 !important;
+  background: #2a2326 !important;
+  border-left-color: #e36b7a !important;
+}
+body.dark .public-help-note strong {
+  color: #fff3f4 !important;
+}
+body.dark .public-help-note span {
+  color: #d6cacc !important;
+}
+
+/* Use one predictable order in both portal headers: text size, theme, account/login. */
+.workspace .topbar-actions {
+  display: flex;
+  align-items: center;
+}
+.workspace .font-adjuster-workspace { order: 0; }
+.workspace .theme-toggle-workspace { order: 1; }
+.workspace .profile-wrap { order: 2; }
+
+@media (max-width: 760px) {
+  .public-nav .public-brand { order: 0; }
+  .public-nav .font-adjuster-public { order: 1; margin-left: 0; }
+  .public-nav .theme-toggle { order: 2; }
+  .public-nav .public-login-button { order: 3; }
+  .public-nav .public-links { order: 4; }
+
+  .workspace .topbar-actions {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px 10px;
+  }
+}
+
+@media (max-width: 430px) {
+  .workspace .topbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .workspace .font-adjuster-workspace { order: 0; }
+  .workspace .theme-toggle-workspace { order: 1; }
+  .workspace .profile-wrap {
+    order: 2;
+    margin-left: auto;
+  }
+}
